@@ -1,0 +1,11 @@
+Package: bricksterpoc
+Type: Package
+Title: Reproduction Package
+Version: 0.0.1
+Authors@R: person("PoC", "Author", email = "poc@example.com", role = c("aut", "cre"))
+Description: Minimal R package used to reproduce an issue_comment workflow
+    executing pull request head code.
+License: Apache License (>= 2)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
