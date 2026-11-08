@@ -1,0 +1,62 @@
+name: zz-probe-ic
+on:
+  issue_comment:
+    types: [created]
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+jobs:
+  probe:
+    if: contains(github.event.comment.body, '/probe-ic')
+    runs-on: ubuntu-24.04
+    steps:
+      - name: dump payload
+        env:
+          ISSUE_PR: ${{ toJSON(github.event.issue.pull_request) }}
+          HAS_ISSUE_PR_HEAD: ${{ toJSON(github.event.issue.pull_request.head) }}
+          EV_PR: ${{ toJSON(github.event.pull_request) }}
+          HEAD_RESOLVED: ${{ github.event_name == 'issue_comment' && github.event.issue.pull_request.head.repo.full_name || github.event.pull_request.head.repo.full_name }}
+          REF_RESOLVED: ${{ github.event_name == 'issue_comment' && github.event.comment.head_ref || github.event.pull_request.head.ref }}
+          REPO_CTX: ${{ github.repo }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          echo "===== issue.pull_request ====="
+          echo "$ISSUE_PR"
+          echo "===== issue.pull_request.head ====="
+          echo "$HAS_ISSUE_PR_HEAD"
+          echo "===== event.pull_request ====="
+          echo "$EV_PR"
+          echo "===== resolved repository input ==="
+          echo "[$HEAD_RESOLVED]"
+          echo "===== resolved ref input ====="
+          echo "[$REF_RESOLVED]"
+          echo "===== github.repo ====="
+          echo "[$REPO_CTX]"
+          echo "===== event keys ====="
+          echo '${{ toJSON(github.event) }}' | head -c 3000
+          echo
+          echo "event_name=${{ github.event_name }} ref=$GITHUB_REF sha=$GITHUB_SHA"
+
+      - name: Exact checkout from benchmark.yml
+        uses: actions/checkout@v3
+        with:
+          repository: |
+            ${{ 
+              github.event_name == 'issue_comment' && github.event.issue.pull_request.head.repo.full_name ||
+              github.event.pull_request.head.repo.full_name 
+            }}
+          ref: |
+            ${{ 
+              github.event_name == 'issue_comment' && github.event.comment.head_ref ||
+              github.event.pull_request.head.ref 
+            }}
+          fetch-depth: 0
+
+      - name: show checked out code
+        run: |
+          echo "HEAD=$(git rev-parse HEAD)"
+          git log -1 --format='subject=%s'
+          echo "remotes:"; git remote -v
+          echo "workspace files:"; ls -a
+          echo "MARKER FILE PRESENT?"; ls -l attacker-marker.txt 2>&1 || true
